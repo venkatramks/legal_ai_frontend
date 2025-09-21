@@ -203,7 +203,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   setClauses(data.clauses || []);
                   setShowVisualizer(true);
                 } else {
-                  console.warn('Failed to load persisted clauses', await resp.text());
+                  // show user-friendly message
+                  let msg = 'Failed to load persisted clauses';
+                  try {
+                    const body = await resp.json();
+                    msg = body.error || JSON.stringify(body);
+                  } catch (e) {
+                    try { msg = await resp.text(); } catch(_){}
+                  }
+                  setToast({ id: `toast-${Date.now()}`, message: msg });
+                  console.warn('Failed to load persisted clauses', msg);
                 }
               } else {
                 // Run fresh analysis
@@ -215,6 +224,64 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   // Pre-populate ClauseVisualizer caches by passing the persisted clauses
                   // ClauseVisualizer will pick up scenarios/legal_references from the clause objects when persisting/viewing
                   setShowVisualizer(true);
+                } else {
+                  // Provide actionable feedback: document likely not processed yet
+                  let msg = 'Clause analysis failed';
+                  try {
+                    const body = await resp.json();
+                    msg = body.error || JSON.stringify(body);
+                  } catch (e) {
+                    try { msg = await resp.text(); } catch(_){}
+                  }
+                  // If we know the underlying cause, offer to start processing using file_name
+                  if (msg && msg.toLowerCase().includes('document text unavailable')) {
+                    const actionAvailable = !!document.file_name;
+                    setToast({
+                      id: `toast-${Date.now()}`,
+                      message: 'Document not processed yet. Click to start processing.',
+                      actionLabel: actionAvailable ? 'Start processing' : undefined,
+                      onAction: actionAvailable ? async () => {
+                        try {
+                          setToast(null);
+                          // Attempt to start processing using document.file_name as the file id
+                          const startResp = await fetch(`${API_BASE}/api/process/${encodeURIComponent(document.file_name)}`, { method: 'POST' });
+                          if (startResp.ok || startResp.status === 202) {
+                            // Poll status until done
+                            const poll = async () => {
+                              for (let i=0;i<60;i++) {
+                                await new Promise(r=>setTimeout(r, 2000));
+                                const st = await fetch(`${API_BASE}/api/process/status/${encodeURIComponent(document.file_name)}`);
+                                if (st.ok) {
+                                  const body = await st.json();
+                                  if (body.status === 'done') {
+                                    // Re-run analysis request
+                                    const r2 = await fetch(`${API_BASE}/api/analysis/clauses/${document.id}`);
+                                    if (r2.ok) {
+                                      const data = await r2.json();
+                                      setClauses(data.clauses || []);
+                                      setShowVisualizer(true);
+                                      setPersistedByDocument(prev => ({ ...prev, [document.id]: true }));
+                                      return;
+                                    }
+                                  }
+                                }
+                              }
+                              setToast({ id: `toast-${Date.now()}`, message: 'Processing did not complete in time. Please try again later.' });
+                            };
+                            poll();
+                          } else {
+                            const txt = await startResp.text().catch(()=>null);
+                            setToast({ id: `toast-${Date.now()}`, message: `Failed to start processing: ${txt || startResp.status}` });
+                          }
+                        } catch (err) {
+                          setToast({ id: `toast-${Date.now()}`, message: `Failed to start processing: ${String(err)}` });
+                        }
+                      } : undefined
+                    });
+                  } else {
+                    setToast({ id: `toast-${Date.now()}`, message: msg });
+                  }
+                  console.warn('Clause analysis failed', msg);
                 }
               }
             } catch (e) {
