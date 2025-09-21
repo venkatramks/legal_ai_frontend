@@ -2,7 +2,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "https://REPLACE_WITH_BACKEND_URL/api/$1"
+      "dest": "https://legal-ai-backend-chi.vercel.app/api/$1"
     }
   ]
 }
