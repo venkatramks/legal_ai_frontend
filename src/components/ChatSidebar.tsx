@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
+import { API_BASE } from '../config';
 
 interface Document {
   id: string;
@@ -100,7 +101,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     if (!window.confirm('Delete this chat (and related messages)?')) return;
                     try {
                       setDeletingId(doc.id);
-                      const resp = await fetch(`http://localhost:5000/api/chats/${doc.id}`, { method: 'DELETE' });
+                      const resp = await fetch(`${API_BASE}/api/chats/${doc.id}`, { method: 'DELETE' });
                       if (resp.ok) {
                         // If currently selected, clear selection
                         if (selectedDocument?.id === doc.id) {

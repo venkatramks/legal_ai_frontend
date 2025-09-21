@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { API_BASE } from '../config';
 import { FileText, Loader2 } from 'lucide-react';
 import axios from 'axios';
 
@@ -25,7 +26,7 @@ const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
 
     const startProcessing = async () => {
       try {
-        const postUrl = `http://localhost:5000/api/process/${fileId}`;
+  const postUrl = `${API_BASE}/api/process/${fileId}`;
         const postResp = await axios.post(postUrl);
 
         // If backend returned immediate result (cached or direct), handle it
@@ -69,7 +70,7 @@ const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
 
       pollingRef.current = window.setInterval(async () => {
         try {
-          const statusUrl = `http://localhost:5000/api/process/status/${fileId}`;
+          const statusUrl = `${API_BASE}/api/process/status/${fileId}`;
           const resp = await axios.get(statusUrl);
           const data = resp.data;
 

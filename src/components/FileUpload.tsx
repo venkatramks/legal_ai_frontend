@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { AlertCircle, Plus } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE } from '../config';
 
 interface FileUploadProps {
   onFileUploaded: (fileData: {file_id: string; filename: string}) => void;
@@ -20,7 +21,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, isProcessing = 
     formData.append('file', file);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/upload', formData, {
+  const response = await axios.post(`${API_BASE}/api/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

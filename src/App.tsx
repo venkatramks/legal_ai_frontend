@@ -22,6 +22,8 @@ interface ChatMessage {
 }
 
 function App() {
+  // Set backend base URL (deployed)
+  const API_BASE = 'https://legal-ai-backend-chi.vercel.app';
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -42,7 +44,7 @@ function App() {
 
   const loadDocuments = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/documents');
+  const response = await fetch(`${API_BASE}/api/documents`);
       if (response.ok) {
         const data = await response.json();
         setDocuments(data.documents || []);
@@ -57,7 +59,7 @@ function App() {
   const loadChatHistory = async (documentId: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:5000/api/chat/${documentId}/history`);
+  const response = await fetch(`${API_BASE}/api/chat/${documentId}/history`);
       if (response.ok) {
         const data = await response.json();
         setChatHistory(data.chats || []);
@@ -79,7 +81,7 @@ function App() {
       setError(null);
       
       // Start processing
-      const processResponse = await fetch(`http://localhost:5000/api/process/${fileData.file_id}`, {
+  const processResponse = await fetch(`${API_BASE}/api/process/${fileData.file_id}`, {
         method: 'POST'
       });
       
@@ -92,7 +94,7 @@ function App() {
           while (attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
             
-            const statusResponse = await fetch(`http://localhost:5000/api/process/status/${fileData.file_id}`);
+            const statusResponse = await fetch(`${API_BASE}/api/process/status/${fileData.file_id}`);
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
               
@@ -101,7 +103,7 @@ function App() {
                 await loadDocuments();
                 
                 // Find and auto-select the newly processed document
-                const updatedDocs = await fetch('http://localhost:5000/api/documents');
+                const updatedDocs = await fetch(`${API_BASE}/api/documents`);
                 if (updatedDocs.ok) {
                   const data = await updatedDocs.json();
                   const newDoc = (data.documents || []).find((d: Document) => 
@@ -168,7 +170,7 @@ function App() {
       setChatHistory(prev => [...prev, userMessage]);
 
       // Send to backend
-      const response = await fetch(`http://localhost:5000/api/chat/${selectedDocument.id}`, {
+  const response = await fetch(`${API_BASE}/api/chat/${selectedDocument.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -200,7 +202,7 @@ function App() {
   const handleDeleteChat = async (documentId: string) => {
     try {
       setIsLoading(true);
-      const resp = await fetch(`http://localhost:5000/api/chats/${documentId}`, { method: 'DELETE' });
+  const resp = await fetch(`${API_BASE}/api/chats/${documentId}`, { method: 'DELETE' });
       if (resp.ok) {
         // Refresh document list and clear selection
         await loadDocuments();
