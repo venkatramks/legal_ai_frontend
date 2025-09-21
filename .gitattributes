@@ -1,0 +1,13 @@
+﻿# Auto-detect text files and normalize them
+* text=auto
+
+# Force LF in the repository for source files (keeps diffs consistent)
+*.json text eol=lf
+*.css  text eol=lf
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.js   text eol=lf
+*.jsx  text eol=lf
+*.py   text eol=lf
+*.md   text eol=lf
+"*.sh" text eol=lf
