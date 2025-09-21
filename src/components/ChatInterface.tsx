@@ -241,42 +241,50 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       message: 'Document not processed yet. Click to start processing.',
                       actionLabel: actionAvailable ? 'Start processing' : undefined,
                       onAction: actionAvailable ? async () => {
-                        try {
-                          setToast(null);
-                          // Attempt to start processing using document.file_name as the file id
-                          const startResp = await fetch(`${API_BASE}/api/process/${encodeURIComponent(document.file_name)}`, { method: 'POST' });
-                          if (startResp.ok || startResp.status === 202) {
-                            // Poll status until done
-                            const poll = async () => {
-                              for (let i=0;i<60;i++) {
-                                await new Promise(r=>setTimeout(r, 2000));
-                                const st = await fetch(`${API_BASE}/api/process/status/${encodeURIComponent(document.file_name)}`);
-                                if (st.ok) {
-                                  const body = await st.json();
-                                  if (body.status === 'done') {
-                                    // Re-run analysis request
-                                    const r2 = await fetch(`${API_BASE}/api/analysis/clauses/${document.id}`);
-                                    if (r2.ok) {
-                                      const data = await r2.json();
-                                      setClauses(data.clauses || []);
-                                      setShowVisualizer(true);
-                                      setPersistedByDocument(prev => ({ ...prev, [document.id]: true }));
+                          try {
+                            setToast(null);
+                            // Attempt to start processing using document.file_name as the file id
+                            const startResp = await fetch(`${API_BASE}/api/process/${encodeURIComponent(document.file_name)}`, { method: 'POST' });
+                            if (startResp.ok || startResp.status === 202) {
+                              // Poll status until done, but bail on 404 (file not found)
+                              const poll = async () => {
+                                for (let i=0;i<60;i++) {
+                                  await new Promise(r=>setTimeout(r, 2000));
+                                  const st = await fetch(`${API_BASE}/api/process/status/${encodeURIComponent(document.file_name)}`);
+                                  if (st.status === 404) {
+                                    // File isn't present on the server — inform the user to re-upload
+                                    setToast({ id: `toast-${Date.now()}`, message: 'Processing file not found on server. Please re-upload the original file and try again.' });
+                                    return;
+                                  }
+                                  if (st.ok) {
+                                    const body = await st.json();
+                                    if (body.status === 'done') {
+                                      // Re-run analysis request
+                                      const r2 = await fetch(`${API_BASE}/api/analysis/clauses/${document.id}`);
+                                      if (r2.ok) {
+                                        const data = await r2.json();
+                                        setClauses(data.clauses || []);
+                                        setShowVisualizer(true);
+                                        setPersistedByDocument(prev => ({ ...prev, [document.id]: true }));
+                                        return;
+                                      }
+                                    } else if (body.status === 'error') {
+                                      setToast({ id: `toast-${Date.now()}`, message: 'Processing failed on server. Please try again later.' });
                                       return;
                                     }
                                   }
                                 }
-                              }
-                              setToast({ id: `toast-${Date.now()}`, message: 'Processing did not complete in time. Please try again later.' });
-                            };
-                            poll();
-                          } else {
-                            const txt = await startResp.text().catch(()=>null);
-                            setToast({ id: `toast-${Date.now()}`, message: `Failed to start processing: ${txt || startResp.status}` });
+                                setToast({ id: `toast-${Date.now()}`, message: 'Processing did not complete in time. Please try again later.' });
+                              };
+                              poll();
+                            } else {
+                              const txt = await startResp.text().catch(()=>null);
+                              setToast({ id: `toast-${Date.now()}`, message: `Failed to start processing: ${txt || startResp.status}` });
+                            }
+                          } catch (err) {
+                            setToast({ id: `toast-${Date.now()}`, message: `Failed to start processing: ${String(err)}` });
                           }
-                        } catch (err) {
-                          setToast({ id: `toast-${Date.now()}`, message: `Failed to start processing: ${String(err)}` });
-                        }
-                      } : undefined
+                        } : undefined
                     });
                   } else {
                     setToast({ id: `toast-${Date.now()}`, message: msg });

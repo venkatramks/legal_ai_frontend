@@ -28,10 +28,14 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, isProcessing = 
       });
 
       if (response.data.file_id) {
+        // Forward the whole response so the caller can use immediate "result" when the
+        // backend processed the upload synchronously (serverless). This avoids a
+        // follow-up /api/process call that may 404 if files are ephemeral.
         onFileUploaded({
           file_id: response.data.file_id,
-          filename: response.data.filename
-        });
+          filename: response.data.filename,
+          rawResponse: response.data
+        } as any);
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || 'Upload failed. Please try again.';

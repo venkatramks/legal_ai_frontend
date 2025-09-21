@@ -75,13 +75,34 @@ function App() {
     }
   };
 
-  const handleFileUploaded = async (fileData: {file_id: string; filename: string}) => {
+  const handleFileUploaded = async (fileData: {file_id: string; filename: string; rawResponse?: any}) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // Start processing
-  const processResponse = await fetch(`${API_BASE}/api/process/${fileData.file_id}`, {
+      // If the upload returned an immediate processed result (serverless sync), use it
+      if (fileData.rawResponse && fileData.rawResponse.result) {
+        // Reload documents list and select the newly processed document if present
+        await loadDocuments();
+        const updatedDocs = await fetch(`${API_BASE}/api/documents`);
+        if (updatedDocs.ok) {
+          const data = await updatedDocs.json();
+          const newDoc = (data.documents || []).find((d: Document) => 
+            d.file_name === fileData.filename || 
+            d.id === fileData.rawResponse.document_id
+          );
+          if (newDoc) {
+            setDocuments(data.documents || []);
+            setSelectedDocument(newDoc);
+            setIsLoading(false);
+            return;
+          }
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      // Start processing (fallback when upload didn't process synchronously)
+      const processResponse = await fetch(`${API_BASE}/api/process/${fileData.file_id}`, {
         method: 'POST'
       });
       
@@ -95,6 +116,11 @@ function App() {
             await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
             
             const statusResponse = await fetch(`${API_BASE}/api/process/status/${fileData.file_id}`);
+            if (statusResponse.status === 404) {
+              // File not found; stop polling and inform user
+              setError('Processing file not found on server. Please re-upload and try again.');
+              break;
+            }
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
               
