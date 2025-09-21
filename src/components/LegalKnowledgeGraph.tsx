@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ExternalLink, BookOpen, Scale, Info } from 'lucide-react';
+import { API_BASE } from '../config';
 
 interface LegalReference {
   id: string;
@@ -48,7 +49,7 @@ const LegalKnowledgeGraph: React.FC<LegalKnowledgeGraphProps> = ({
         try {
           // Try backend first
           try {
-            const resp = await fetch('http://localhost:5000/api/legal-knowledge-graph', {
+            const resp = await fetch(`${API_BASE}/api/legal-knowledge-graph`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ clauseText, documentType, clauseType })
             });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../config';
 import { AlertTriangle, TrendingUp, TrendingDown, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Scenario {
@@ -50,7 +51,7 @@ const WhatIfScenarios: React.FC<WhatIfScenariosProps> = ({
         setLoading(true);
         try {
           // Call backend API to get what-if scenarios
-          const response = await fetch('http://localhost:5000/api/what-if-scenarios', {
+          const response = await fetch(`${API_BASE}/api/what-if-scenarios`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

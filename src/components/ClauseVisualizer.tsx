@@ -1,6 +1,7 @@
 import React from 'react';
 import LegalKnowledgeGraph from './LegalKnowledgeGraph';
 import WhatIfScenarios from './WhatIfScenarios';
+import { API_BASE } from '../config';
 
 interface Clause {
   id: string;
@@ -43,7 +44,7 @@ const ClauseVisualizer: React.FC<ClauseVisualizerProps> = ({ clauses, documentId
       try {
         // Fetch scenarios only if not present in clause
         if ((!c.scenarios || c.scenarios.length === 0) && c.clause_text) {
-          const resp = await fetch('http://localhost:5000/api/what-if-scenarios', {
+          const resp = await fetch(`${API_BASE}/api/what-if-scenarios`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ clauseText: c.clause_text, documentType: documentType, clauseType: c.risk })
           });
@@ -58,7 +59,7 @@ const ClauseVisualizer: React.FC<ClauseVisualizerProps> = ({ clauses, documentId
 
         // Fetch legal references only if not present
         if ((!c.legal_references || c.legal_references.length === 0) && c.clause_text) {
-          const resp2 = await fetch('http://localhost:5000/api/legal-knowledge-graph', {
+          const resp2 = await fetch(`${API_BASE}/api/legal-knowledge-graph`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ clauseText: c.clause_text, documentType: documentType, clauseType: c.risk })
           });
@@ -98,7 +99,7 @@ const ClauseVisualizer: React.FC<ClauseVisualizerProps> = ({ clauses, documentId
         legal_references: referencesById[c.id] || undefined
       }));
 
-      const resp = await fetch(`http://localhost:5000/api/analysis/clauses/${documentId}/persist`, {
+  const resp = await fetch(`${API_BASE}/api/analysis/clauses/${documentId}/persist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clauses: payloadClauses })

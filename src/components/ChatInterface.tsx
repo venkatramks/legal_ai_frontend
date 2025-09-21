@@ -4,6 +4,7 @@ import rehypeRaw from 'rehype-raw';
 import ClauseVisualizer from './ClauseVisualizer';
 import Toast from './Toast';
 import { TypingAnimation } from './TypingAnimation';
+import { API_BASE } from '../config';
 
 interface Document {
   id: string;
@@ -65,7 +66,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     let mounted = true;
     const checkPersisted = async () => {
       try {
-        const resp = await fetch(`http://localhost:5000/api/analysis/clauses/${document.id}/persisted`);
+  const resp = await fetch(`${API_BASE}/api/analysis/clauses/${document.id}/persisted`);
         if (resp.ok) {
           const data = await resp.json();
           const present = Array.isArray(data.clauses) && data.clauses.length > 0;
@@ -196,7 +197,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               setVisualizerLoading(true);
               if (persistedByDocument[document.id]) {
                 // Load persisted clauses from server
-                const resp = await fetch(`http://localhost:5000/api/analysis/clauses/${document.id}/persisted`);
+                const resp = await fetch(`${API_BASE}/api/analysis/clauses/${document.id}/persisted`);
                 if (resp.ok) {
                   const data = await resp.json();
                   setClauses(data.clauses || []);
@@ -206,7 +207,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 }
               } else {
                 // Run fresh analysis
-                const resp = await fetch(`http://localhost:5000/api/analysis/clauses/${document.id}`);
+                const resp = await fetch(`${API_BASE}/api/analysis/clauses/${document.id}`);
                 if (resp.ok) {
                   const data = await resp.json();
                   const persisted = data.clauses || [];
@@ -267,7 +268,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   actionLabel: 'Undo',
                   onAction: async () => {
                     try {
-                      const resp = await fetch(`http://localhost:5000/api/analysis/clauses/${document.id}/undo`, {
+                      const resp = await fetch(`${API_BASE}/api/analysis/clauses/${document.id}/undo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ clause_ids: ids })
